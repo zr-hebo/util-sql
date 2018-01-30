@@ -2,6 +2,7 @@ package sqlutil
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/zr-hebo/state_machine/gfsm"
 )
@@ -26,8 +27,8 @@ func Split(rawStr string) (sts []string, err error) {
 	for idx := 0; idx < allRuneLen; idx++ {
 		cr := rawRunes[idx]
 
-		haha := sm.GetState()
-		stateCode, err = getStateCode(haha)
+		currState := sm.GetState()
+		stateCode, err = getStateCode(currState)
 		if err != nil {
 			return
 		}
@@ -61,11 +62,15 @@ func Split(rawStr string) (sts []string, err error) {
 
 	if subStrStartPos < allRuneLen {
 		subRunes := rawRunes[subStrStartPos:allRuneLen]
-		if len(subRunes) > 1 {
-			subRunes = subRunes[:len(subRunes)-1]
+		if len(subRunes) <= 1 {
+			return
 		}
-		subStr := string(subRunes)
-		sts = append(sts, subStr)
+
+		subRunes = subRunes[:len(subRunes)-1]
+		subStr := strings.TrimSpace(string(subRunes))
+		if len(subStr) > 0 {
+			sts = append(sts)
+		}
 	}
 
 	return
