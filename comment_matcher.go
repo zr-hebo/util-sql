@@ -39,13 +39,12 @@ func isCharInCommentEnd(currChar rune) bool {
 
 func (cm *commentMatcher) matchMeaningfullCommentStart(
 	runeArray []rune, idx int) (bool, *CommentRule) {
-	if cm.StartPos != -1 {
+	if cm.StartPos != -1 || cm.CurrentComment != nil {
 		return false, nil
 	}
 
 	for _, currComment := range commentArray {
-		if matchSubArray(runeArray, currComment.Start, idx) &&
-			!matchSubArray(runeArray, currComment.Exception, idx) {
+		if matchSubArray(runeArray, currComment.Start, idx) {
 			return true, currComment
 		}
 	}
@@ -66,4 +65,13 @@ func (cm *commentMatcher) matchCommentEnd(
 	}
 
 	return false, nil
+}
+
+
+func (cm *commentMatcher) matchException(mainArray []rune) (matched bool) {
+	if len(cm.CurrentComment.Exception) < 1 {
+		return false
+	}
+
+	return matchSubArray(mainArray, cm.CurrentComment.Exception, cm.StartPos)
 }

@@ -17,75 +17,12 @@ type CommentRule struct {
 // RemoveComments 删除sql语句中的注释信息
 func RemoveComments(stmtStr string) (string, error) {
 	stmtRuneArray := []rune(stmtStr)
-	cleanStmtRuneArray, err := removeCommentAvoidQuote(stmtRuneArray)
+	cleanStmtRuneArray, err := removeCommentInDetail(stmtRuneArray)
 	if err != nil {
 		return "", err
 	}
 
-	//cleanStmtRuneArray = removeSpecialCommentAvoidQuote(cleanStmtRuneArray,
-	//	[]rune("--\n"))
-
 	return string(cleanStmtRuneArray), nil
-}
-
-func removeSpecialCommentAvoidQuote(rawStmtRuneArray,
-	commentSpecialRuneArray []rune) []rune {
-	// remove comment like "--\n" or "--"
-	stmtRuneArray := append(rawStmtRuneArray, '\n')
-	// commentSpecialRuneArray := []rune(specialCommentStr)
-	cleanStmtRuneArray := []rune{}
-	specialCommentLength := len(commentSpecialRuneArray)
-	stmtLength := len(stmtRuneArray)
-	if specialCommentLength < 1 || stmtLength < 1 {
-		return cleanStmtRuneArray
-	}
-
-	firstRuneOfSpecial := commentSpecialRuneArray[0]
-	qm := quoteMatcher{}
-	cursor := 0
-	commentStartPos := -1
-	commentEndPos := -1
-	for idx := 0; idx < stmtLength; idx++ {
-		currChar := stmtRuneArray[idx]
-
-		if isMeaningfulQuoteInIndex(stmtRuneArray, idx) {
-			qm.pushQuote(currChar)
-
-		} else if currChar == firstRuneOfSpecial {
-			if qm.isQuoteMatch() &&
-				matchSubArray(stmtRuneArray, commentSpecialRuneArray, idx) {
-				commentStartPos = idx
-				commentEndPos = idx + specialCommentLength - 1
-				if cursor < commentStartPos {
-					cleanStmtRuneArray = append(append(cleanStmtRuneArray, '\n'),
-						stmtRuneArray[cursor:commentStartPos]...)
-				}
-
-				cursor = commentEndPos + 1
-				idx = commentEndPos
-				commentStartPos = -1
-				commentEndPos = -1
-			}
-		}
-	}
-
-	if cursor < stmtLength {
-		if commentStartPos < 0 && qm.isQuoteMatch() {
-			cleanStmtRuneArray = append(cleanStmtRuneArray,
-				stmtRuneArray[cursor:]...)
-		} else if cursor < commentStartPos {
-			cleanStmtRuneArray = append(cleanStmtRuneArray,
-				stmtRuneArray[cursor:commentStartPos]...)
-		}
-	}
-
-	cleanStmtLength := len(cleanStmtRuneArray)
-	if cleanStmtLength > 0 &&
-		cleanStmtRuneArray[cleanStmtLength-1] == '\n' {
-		cleanStmtRuneArray = cleanStmtRuneArray[:cleanStmtLength-1]
-	}
-
-	return cleanStmtRuneArray
 }
 
 func splitAvoidQuote(stmtStr string, splitor rune) ([]string, error) {
@@ -128,9 +65,9 @@ func isMeaningfulQuoteInIndex(runeArray []rune, idx int) bool {
 		(!haveUnmatchedEscapeBeforeIndex(runeArray, idx))
 }
 
-func removeCommentAvoidQuote(rawStmtRuneArray []rune) ([]rune, error) {
+func removeCommentInDetail(rawStmtRuneArray []rune) ([]rune, error) {
 	stmtRuneArray := append(rawStmtRuneArray, '\n')
-	cleanStmtRuneArray := []rune{}
+	cleanStmtRuneArray := make([]rune, 0)
 	stmtLength := len(stmtRuneArray)
 
 	qm := quoteMatcher{}
@@ -155,11 +92,13 @@ func removeCommentAvoidQuote(rawStmtRuneArray []rune) ([]rune, error) {
 		} else if isCharInCommentEnd(currChar) {
 			isCommentEndMatch, _ :=
 				cm.matchCommentEnd(stmtRuneArray, idx)
-			if qm.isQuoteMatch() && isCommentEndMatch {
+			if qm.isQuoteMatch() && isCommentEndMatch  {
+				cm.EndPos = idx + len(cm.CurrentComment.End) - 1
+				if cm.matchException(stmtRuneArray) {
+					cleanStmtRuneArray = append(cleanStmtRuneArray,
+						stmtRuneArray[cursor:cm.EndPos+1]...)
 
-				cm.EndPos = idx + len(
-					cm.CurrentComment.End) - 1
-				if cursor < cm.EndPos {
+				} else if cursor < cm.EndPos {
 					cleanStmtRuneArray = append(cleanStmtRuneArray,
 						stmtRuneArray[cursor:cm.StartPos]...)
 					cleanStmtRuneArray = append(cleanStmtRuneArray,
@@ -168,6 +107,7 @@ func removeCommentAvoidQuote(rawStmtRuneArray []rune) ([]rune, error) {
 
 				cursor = cm.EndPos + 1
 				idx = cm.EndPos
+				cm.CurrentComment = nil
 				cm.StartPos = -1
 				cm.EndPos = -1
 			}
@@ -175,10 +115,10 @@ func removeCommentAvoidQuote(rawStmtRuneArray []rune) ([]rune, error) {
 	}
 
 	if cursor < stmtLength {
-		if qm.isQuoteMatch() &&
-			cm.StartPos == -1 {
+		if qm.isQuoteMatch() &&	cm.StartPos == -1 {
 			cleanStmtRuneArray = append(cleanStmtRuneArray,
 				stmtRuneArray[cursor:]...)
+
 		} else {
 			return nil, fmt.Errorf("have invalid comments in raw statements")
 		}
