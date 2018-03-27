@@ -1,10 +1,10 @@
 # remove comments
 sql statement comment remover
 
-### 使用示例如下：
-将下面代码保存在main.go文件
+### For example：
+save code in main.go
 
-执行命令`>go run main.go`
+execute `>go run main.go`
 ```
 package main
 
