@@ -1,4 +1,4 @@
-# cmtrm
+# remove comments
 sql statement comment remover
 
 ### 使用示例如下：
