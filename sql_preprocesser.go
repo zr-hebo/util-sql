@@ -92,11 +92,11 @@ func removeCommentInDetail(rawStmtRuneArray []rune) ([]rune, error) {
 		} else if isCharInCommentEnd(currChar) {
 			isCommentEndMatch, _ :=
 				cm.matchCommentEnd(stmtRuneArray, idx)
-			if qm.isQuoteMatch() && isCommentEndMatch  {
-				cm.EndPos = idx + len(cm.CurrentComment.End) - 1
+			if qm.isQuoteMatch() && isCommentEndMatch {
+				cm.EndPos = idx + len(cm.CurrentComment.End)
 				if cm.matchException(stmtRuneArray) {
 					cleanStmtRuneArray = append(cleanStmtRuneArray,
-						stmtRuneArray[cursor:cm.EndPos+1]...)
+						stmtRuneArray[cursor:cm.EndPos]...)
 
 				} else if cursor < cm.EndPos {
 					cleanStmtRuneArray = append(cleanStmtRuneArray,
@@ -105,8 +105,8 @@ func removeCommentInDetail(rawStmtRuneArray []rune) ([]rune, error) {
 						cm.CurrentComment.Replacement...)
 				}
 
-				cursor = cm.EndPos + 1
-				idx = cm.EndPos
+				cursor = cm.EndPos
+				idx = cm.EndPos - 1
 				cm.CurrentComment = nil
 				cm.StartPos = -1
 				cm.EndPos = -1
@@ -115,7 +115,7 @@ func removeCommentInDetail(rawStmtRuneArray []rune) ([]rune, error) {
 	}
 
 	if cursor < stmtLength {
-		if qm.isQuoteMatch() &&	cm.StartPos == -1 {
+		if qm.isQuoteMatch() && cm.StartPos == -1 {
 			cleanStmtRuneArray = append(cleanStmtRuneArray,
 				stmtRuneArray[cursor:]...)
 

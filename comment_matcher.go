@@ -5,9 +5,21 @@ package sqlutil
 var (
 	// commentArray []*CommentRule
 	commentArray = []*CommentRule{
-		&CommentRule{[]rune("#"), []rune("\n"), []rune{}, []rune("\n")},
-		&CommentRule{[]rune("--"), []rune("\n"), []rune{}, []rune("\n")},
-		&CommentRule{[]rune("/*"), []rune("*/"), []rune("/*!"), []rune(" ")},
+		&CommentRule{
+			Start:       []rune("#"),
+			End:         []rune("\n"),
+			Exception:   []rune{},
+			Replacement: []rune("")},
+		&CommentRule{
+			Start:       []rune("--"),
+			End:         []rune("\n"),
+			Exception:   []rune{},
+			Replacement: []rune("")},
+		&CommentRule{
+			Start:       []rune("/*"),
+			End:         []rune("*/"),
+			Exception:   []rune("/*!"),
+			Replacement: []rune(" ")},
 	}
 )
 
@@ -66,7 +78,6 @@ func (cm *commentMatcher) matchCommentEnd(
 
 	return false, nil
 }
-
 
 func (cm *commentMatcher) matchException(mainArray []rune) (matched bool) {
 	if len(cm.CurrentComment.Exception) < 1 {
