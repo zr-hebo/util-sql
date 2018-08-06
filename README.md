@@ -11,7 +11,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/zr-hebo/sqlutil"
+	su "github.com/zr-hebo/util-sql"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	}
 	for _, stmt := range stmts {
 		fmt.Printf("sql:%v\n", stmt)
-		newStmt, err := sqlutil.RemoveComments(stmt)
+		newStmt, err := su.RemoveComments(stmt)
 		if err != nil {
 			panic(err.Error())
 		}
