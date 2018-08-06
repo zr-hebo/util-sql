@@ -41,11 +41,12 @@ func Split(rawStr string) (sts []string, err error) {
 			continue
 		}
 
-		option, err = sm.Walk(idx)
+		err = sm.Walk(idx)
 		if err != nil {
 			return
 		}
 
+		option = sm.GetState().GetVal()
 		if option != nil {
 			step := option.(int)
 			idx = idx + step - 1

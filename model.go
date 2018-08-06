@@ -50,6 +50,7 @@ type commonComponents struct {
 type matchState struct {
 	*commonComponents
 	stateCode int
+	currPos   interface{}
 }
 
 func (ms matchState) String() string {
@@ -61,7 +62,11 @@ func (ms *matchState) IsEnd() bool {
 }
 
 func (ms *matchState) GetVal() interface{} {
-	return ms.stateCode
+	return ms.currPos
+}
+
+func (ms *matchState) SetVal(currPos int) {
+	ms.currPos = currPos
 }
 
 func (ms *matchState) Walk(val interface{}) (
@@ -97,8 +102,9 @@ func NewPlainState(cc *commonComponents) (ps *PlainState) {
 }
 
 // Walk Walk
-func (ps *PlainState) Walk(val interface{}) (
-	nextState gfsm.Stater, option interface{}, err error) {
+func (ps *PlainState) Walk(vals ...interface{}) (
+	nextState gfsm.Stater, err error) {
+	val := vals[0]
 	checkRuneLen := len(ps.checkRunes)
 	startPos := val.(int)
 	nextState = ps
@@ -108,7 +114,7 @@ func (ps *PlainState) Walk(val interface{}) (
 		return
 	}
 
-	option = 1
+	ps.currPos = 1
 	for _, sr := range sensiableRanges {
 		cmpLen := len(sr.start)
 		endPos := startPos + cmpLen
@@ -117,8 +123,9 @@ func (ps *PlainState) Walk(val interface{}) (
 		}
 
 		if isRunesSame(ps.checkRunes[startPos:endPos], sr.start) {
-			option = len(sr.start)
-			nextState = NewSensiableState(ps.commonComponents)
+			ss := NewSensiableState(ps.commonComponents)
+			ss.SetVal(len(sr.start))
+			nextState = ss
 			return
 		}
 	}
@@ -142,13 +149,14 @@ func NewSensiableState(cc *commonComponents) (ss *SensiableState) {
 }
 
 // Walk Walk
-func (ss *SensiableState) Walk(val interface{}) (
-	nextState gfsm.Stater, option interface{}, err error) {
+func (ss *SensiableState) Walk(vals ...interface{}) (
+	nextState gfsm.Stater, err error) {
+	val := vals[0]
 	checkRuneLen := len(ss.checkRunes)
 	startPos := val.(int)
 	nextState = ss
 
-	option = 1
+	ss.currPos = 1
 	for _, sr := range sensiableRanges {
 		cmpLen := len(sr.end)
 		endPos := startPos + cmpLen
@@ -158,8 +166,9 @@ func (ss *SensiableState) Walk(val interface{}) (
 
 		if isRunesSame(ss.checkRunes[startPos:endPos], sr.end) &&
 			checkEscape(sr.careEscape, ss.checkRunes, startPos) {
-			option = len(sr.end)
-			nextState = NewPlainState(ss.commonComponents)
+			ps := NewPlainState(ss.commonComponents)
+			ps.SetVal(len(sr.start))
+			nextState = ps
 			return
 		}
 	}
@@ -201,8 +210,8 @@ func NewEndState(cc *commonComponents) (es *EndState) {
 }
 
 // Walk Walk
-func (es *EndState) Walk(val interface{}) (
-	nextState gfsm.Stater, option interface{}, err error) {
+func (es *EndState) Walk(vals ...interface{}) (
+	nextState gfsm.Stater, err error) {
 	err = errors.New(
 		"state machine was already in finish state, cannot walk")
 	return
