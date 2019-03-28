@@ -2,6 +2,9 @@
 sql statement comment remover
 
 ### For example：
+验证功能：
+`go test -v -test.run TestRemoveComments`
+
 save code in main.go
 
 execute `>go run main.go`
