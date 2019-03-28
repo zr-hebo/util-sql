@@ -1,6 +1,8 @@
 package sqlutil
 
 var testSQLs = []string{
+	"show create table student(id int, name varchar(64) comment 'a student name; maybe empty; eg:zhangsan', age int)",
+	"INSERT INTO `event_ticket` (`detail`) VALUES (\"*/&lt;/p&gt;\");",
 	"/* asdfasfdsdf */delete from abc",
 	"-- ----------------------------\n" +
 		"-- Table structure for osc" +

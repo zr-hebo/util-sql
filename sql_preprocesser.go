@@ -120,7 +120,9 @@ func removeCommentInDetail(rawStmtRuneArray []rune) ([]rune, error) {
 				stmtRuneArray[cursor:]...)
 
 		} else {
-			return nil, fmt.Errorf("have invalid comments in raw statements")
+			return nil, fmt.Errorf(
+				"have invalid comments in raw statements: %s",
+				string(stmtRuneArray[cursor:]))
 		}
 	}
 

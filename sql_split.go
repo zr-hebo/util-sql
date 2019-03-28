@@ -14,49 +14,59 @@ const (
 )
 
 // Split 分割字符串，保留引号内部的分割符，用于sql语句拆分之类的语句.
-func Split(rawStr string) (sts []string, err error) {
-	sts = make([]string, 0, defaultSliceLen)
+func Split(rawStr string) (splitSQLs []string, err error) {
+	splitSQLs = make([]string, 0, defaultSliceLen)
 	rawRunes := []rune(rawStr)
 	rawRunes = append(rawRunes, rune('\n'))
-	sm := NewSplitChecker(rawStr)
+	splitStateMachine := NewSplitChecker(rawStr)
 	var stateCode int
 	subStrStartPos := 0
 	allRuneLen := len(rawRunes)
-	var option interface{}
+	// var option interface{}
 
 	for idx := 0; idx < allRuneLen; idx++ {
 		cr := rawRunes[idx]
 
-		currState := sm.GetState()
+		a := string(rawRunes[idx])
+		_ = a
+
+		currState := splitStateMachine.GetState()
 		stateCode, err = getStateCode(currState)
 		if err != nil {
 			return
 		}
 
+		// 遇到分割符并且可以分割
 		if cr == splitRune && stateCode != sensiableStateCode {
 			subRunes := rawRunes[subStrStartPos : idx+1]
-			subStr := fmt.Sprintf("%s", string(subRunes))
-			sts = append(sts, subStr)
+			splitSQLs = append(splitSQLs, string(subRunes))
 			subStrStartPos = idx + 1
 			continue
 		}
 
-		err = sm.Walk(idx)
+		// 处理当前字符
+		err = splitStateMachine.Walk(idx)
 		if err != nil {
 			return
 		}
-
-		option = sm.GetState().GetVal()
+		/*
+		option = splitStateMachine.GetState().GetVal()
 		if option != nil {
 			step := option.(int)
 			idx = idx + step - 1
 		}
+		*/
 	}
-	sm.Walk(allRuneLen)
+	/*
+		err = splitStateMachine.Walk(allRuneLen)
+		if err != nil {
+			return
+		}
+	*/
 
-	if !sm.IsFinished() {
+	if !splitStateMachine.IsFinished() {
 		err = fmt.Errorf(
-			"invalid begin from %dth charater in sql: %s",
+			"invalid SQL begin from %dth charater : %s",
 			subStrStartPos, rawStr[subStrStartPos:])
 		return
 	}
@@ -70,7 +80,7 @@ func Split(rawStr string) (sts []string, err error) {
 		subRunes = subRunes[:len(subRunes)-1]
 		subStr := strings.TrimSpace(string(subRunes))
 		if len(subStr) > 0 {
-			sts = append(sts)
+			splitSQLs = append(splitSQLs)
 		}
 	}
 

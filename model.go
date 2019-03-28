@@ -32,6 +32,7 @@ var stateNames = map[int]string{
 }
 var (
 	sensiableRanges = []sensiableRange{
+		{start: []rune("("), end: []rune(")"), careEscape: false},
 		{start: []rune("'"), end: []rune("'"), careEscape: true},
 		{start: []rune("\""), end: []rune("\""), careEscape: true},
 		{start: []rune("`"), end: []rune("`"), careEscape: true},
@@ -123,7 +124,7 @@ func (ps *PlainState) Walk(vals ...interface{}) (
 		}
 
 		if isRunesSame(ps.checkRunes[startPos:endPos], sr.start) {
-			ss := NewSensiableState(ps.commonComponents)
+			ss := NewSensiableState(ps.commonComponents, &sr)
 			ss.SetVal(len(sr.start))
 			nextState = ss
 			return
@@ -140,10 +141,11 @@ type SensiableState struct {
 }
 
 // NewSensiableState NewPlainState
-func NewSensiableState(cc *commonComponents) (ss *SensiableState) {
+func NewSensiableState(cc *commonComponents, sr *sensiableRange) (ss *SensiableState) {
 	ss = &SensiableState{}
 	ss.stateCode = sensiableStateCode
 	ss.commonComponents = cc
+	ss.sr = sr
 
 	return
 }
@@ -157,20 +159,19 @@ func (ss *SensiableState) Walk(vals ...interface{}) (
 	nextState = ss
 
 	ss.currPos = 1
-	for _, sr := range sensiableRanges {
-		cmpLen := len(sr.end)
-		endPos := startPos + cmpLen
-		if endPos > checkRuneLen {
-			endPos = checkRuneLen
-		}
+	cmpLen := len(ss.sr.end)
+	endPos := startPos + cmpLen
+	if endPos > checkRuneLen {
+		endPos = checkRuneLen
+	}
 
-		if isRunesSame(ss.checkRunes[startPos:endPos], sr.end) &&
-			checkEscape(sr.careEscape, ss.checkRunes, startPos) {
-			ps := NewPlainState(ss.commonComponents)
-			ps.SetVal(len(sr.start))
-			nextState = ps
-			return
-		}
+	if startPos < endPos &&
+		isRunesSame(ss.checkRunes[startPos:endPos], ss.sr.end) &&
+		checkEscape(ss.sr.careEscape, ss.checkRunes, startPos) {
+		ps := NewPlainState(ss.commonComponents)
+		ps.SetVal(len(ss.sr.start))
+		nextState = ps
+		return
 	}
 
 	return

@@ -10,6 +10,10 @@ func TestRemoveComments(t *testing.T) {
 		output string
 	}{
 		{
+			input:  "INSERT INTO `event_ticket` (`detail`) VALUES (\"*/&lt;/p&gt;\");",
+			output: "INSERT INTO `event_ticket` (`detail`) VALUES (\"*/&lt;/p&gt;\");",
+		},
+		{
 			input:  "/* comments */delete from abc",
 			output: " delete from abc",
 		},
